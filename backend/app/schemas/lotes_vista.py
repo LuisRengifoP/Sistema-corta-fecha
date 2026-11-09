@@ -29,6 +29,9 @@ class ExistenciaBodega(BaseModel):
     bodega_nombre: str
     sucursal_nombre: str
     cantidad: Decimal
+    # Desglose declarado por el encargado; None si no se declaro.
+    cajas: Decimal | None = None
+    unidades_sueltas: Decimal | None = None
 
 
 class InspeccionResumen(BaseModel):

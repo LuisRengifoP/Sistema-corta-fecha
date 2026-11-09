@@ -20,7 +20,21 @@
   let editando = $state<Usuario | null>(null);
 
   const rolNombre = $derived(new Map(roles.map((r) => [r.id, r.nombre])));
+
+  // Solo se ofrecen las sucursales habilitadas. Si queda una sola (Distrimarcas),
+  // deja de ser un dato que el encargado tenga que elegir o filtrar.
   const sucNombre = $derived(new Map(sucursales.map((s) => [s.id, s.nombre])));
+  const sucursalesActivas = $derived(sucursales.filter((s) => s.activa));
+  const sucursalUnica = $derived(sucursalesActivas.length === 1 ? sucursalesActivas[0] : null);
+
+  // Filtro de roles: se muestran los roles que el sistema usa hoy (todos los
+  // usuarios son Admin), mas el rol del usuario que se esta editando.
+  const rolesAsignables = $derived.by(() => {
+    const enUso = new Set(usuarios.map((u) => u.rol_id));
+    if (editando) enUso.add(editando.rol_id);
+    const lista = roles.filter((r) => enUso.has(r.id));
+    return lista.length > 0 ? lista : roles;
+  });
 
   async function cargar() {
     cargando = true;
@@ -74,7 +88,12 @@
   });
 </script>
 
-<PageHeader titulo="Usuarios y permisos" descripcion="Administra las cuentas de acceso al sistema y sus roles.">
+<PageHeader
+  titulo="Usuarios y permisos"
+  descripcion={sucursalUnica
+    ? `Administra las cuentas de acceso y sus roles. Sucursal: ${sucursalUnica.nombre}.`
+    : 'Administra las cuentas de acceso al sistema y sus roles.'}
+>
   {#snippet acciones()}
     <button onclick={nuevo}
       class="inline-flex items-center gap-2 rounded-control bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
@@ -97,7 +116,7 @@
           <th class="px-4 py-3">Nombre</th>
           <th class="px-4 py-3">Email</th>
           <th class="px-4 py-3">Rol</th>
-          <th class="px-4 py-3">Sucursal</th>
+          {#if !sucursalUnica}<th class="px-4 py-3">Sucursal</th>{/if}
           <th class="px-4 py-3">Estado</th>
           <th class="px-4 py-3">Ultimo acceso</th>
           <th class="px-4 py-3 text-right">Acciones</th>
@@ -109,7 +128,11 @@
             <td class="px-4 py-3 font-medium text-ink">{u.nombre}</td>
             <td class="px-4 py-3 text-ink">{u.email}</td>
             <td class="px-4 py-3 text-ink">{rolNombre.get(u.rol_id) ?? '—'}</td>
-            <td class="px-4 py-3 text-ink">{u.sucursal_id ? (sucNombre.get(u.sucursal_id) ?? '—') : '—'}</td>
+            {#if !sucursalUnica}
+              <td class="px-4 py-3 text-ink">
+                {u.sucursal_id ? (sucNombre.get(u.sucursal_id) ?? '—') : '—'}
+              </td>
+            {/if}
             <td class="px-4 py-3">
               {#if u.activo}
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-estado-normal/10 px-2.5 py-0.5 text-xs font-medium text-estado-normal">
@@ -148,8 +171,8 @@
 {#if modalAbierto}
   <UsuarioModal
     usuario={editando}
-    {roles}
-    {sucursales}
+    roles={rolesAsignables}
+    sucursales={sucursalesActivas}
     onClose={() => (modalAbierto = false)}
     onSaved={cargar}
   />

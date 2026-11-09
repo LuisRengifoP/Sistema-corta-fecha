@@ -29,6 +29,7 @@ api_router.include_router(
         read_schema=seguridad.SucursalRead,
         create_schema=seguridad.SucursalCreate,
         update_schema=seguridad.SucursalUpdate,
+        en_uso_msg="hay bodegas o usuarios asociados a esta sucursal",
     )
 )
 api_router.include_router(
@@ -39,6 +40,7 @@ api_router.include_router(
         read_schema=seguridad.BodegaRead,
         create_schema=seguridad.BodegaCreate,
         update_schema=seguridad.BodegaUpdate,
+        en_uso_msg="hay existencias o registros en esta bodega",
     )
 )
 api_router.include_router(
@@ -59,6 +61,7 @@ api_router.include_router(
         read_schema=catalogo.ProveedorRead,
         create_schema=catalogo.ProveedorCreate,
         update_schema=catalogo.ProveedorUpdate,
+        en_uso_msg="hay productos de este proveedor",
     )
 )
 api_router.include_router(
@@ -69,6 +72,7 @@ api_router.include_router(
         read_schema=catalogo.ProductoRead,
         create_schema=catalogo.ProductoCreate,
         update_schema=catalogo.ProductoUpdate,
+        en_uso_msg="hay lotes de este producto",
     )
 )
 # Vista calculada de lotes (antes del CRUD generico por prioridad de rutas).
@@ -81,6 +85,7 @@ api_router.include_router(
         read_schema=inventario.LoteRead,
         create_schema=inventario.LoteCreate,
         update_schema=inventario.LoteUpdate,
+        en_uso_msg="hay existencias, inspecciones o alertas de este lote",
     )
 )
 api_router.include_router(
@@ -126,6 +131,7 @@ api_router.include_router(
         read_schema=auth.RolRead,
         create_schema=auth.RolCreate,
         update_schema=auth.RolUpdate,
+        en_uso_msg="hay usuarios asignados a este rol",
     )
 )
 

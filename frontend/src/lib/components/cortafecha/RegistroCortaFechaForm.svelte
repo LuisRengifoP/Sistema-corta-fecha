@@ -2,6 +2,7 @@
   import { api } from '$lib/services/api';
   import { toast } from '$lib/stores/ui';
   import type { Bodega, Proveedor } from '$lib/types';
+  import { num } from '$lib/utils/format';
   import XIcon from 'lucide-svelte/icons/x';
 
   let { onClose, onSaved }: { onClose: () => void; onSaved: () => void } = $props();
@@ -15,14 +16,21 @@
   let descripcion = $state('');
   let numeroLote = $state('');
   let fechaVenc = $state('');
-  let unidades = $state<number | null>(null);
+  // Desglose: el encargado decide cuanto va en cajas y cuanto en unidades.
+  // Los tres campos son independientes; el sistema no reparte el total solo.
+  let cajas = $state<number>(0);
+  let unidadesSueltas = $state<number>(0);
+  let unidadesPorCaja = $state<number>(1);
   let bodegaId = $state<number | null>(null);
   let observaciones = $state('');
 
   let guardando = $state(false);
 
   $effect(() => {
-    api.get<Proveedor[]>('/api/v1/proveedores').then((p) => (proveedores = p)).catch(() => {});
+    api
+      .get<Proveedor[]>('/api/v1/proveedores')
+      .then((p) => (proveedores = p))
+      .catch(() => {});
     api
       .get<Bodega[]>('/api/v1/bodegas')
       .then((b) => {
@@ -32,13 +40,20 @@
       .catch(() => {});
   });
 
+  const nCajas = $derived(Math.max(0, Number(cajas) || 0));
+  const nPorCaja = $derived(Math.max(1, Number(unidadesPorCaja) || 1));
+  const nSueltas = $derived(Math.max(0, Number(unidadesSueltas) || 0));
+  const totalUnidades = $derived(nCajas * nPorCaja + nSueltas);
+
   const puedeGuardar = $derived(
     sku.trim() !== '' &&
       descripcion.trim() !== '' &&
       numeroLote.trim() !== '' &&
       fechaVenc !== '' &&
-      unidades !== null &&
-      unidades > 0 &&
+      Number(unidadesPorCaja) > 0 &&
+      Number(cajas) >= 0 &&
+      Number(unidadesSueltas) >= 0 &&
+      totalUnidades > 0 &&
       bodegaId !== null
   );
 
@@ -51,7 +66,9 @@
         descripcion: descripcion.trim(),
         numero_lote: numeroLote.trim(),
         fecha_vencimiento: fechaVenc,
-        unidades,
+        cajas: nCajas,
+        unidades_sueltas: nSueltas,
+        unidades_por_caja: nPorCaja,
         bodega_id: bodegaId,
         proveedor_id: proveedorId,
         observaciones: observaciones.trim() || null
@@ -86,7 +103,7 @@
     <div>
       <label for="cf-prov" class="font-medium text-ink">Proveedor</label>
       <select id="cf-prov" bind:value={proveedorId}
-        class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none">
+        class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none">
         <option value={null}>Sin proveedor</option>
         {#each proveedores as p (p.id)}<option value={p.id}>{p.nombre}</option>{/each}
       </select>
@@ -96,37 +113,60 @@
       <div>
         <label for="cf-sku" class="font-medium text-ink">Codigo (SKU)</label>
         <input id="cf-sku" bind:value={sku} placeholder="N27684"
-          class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none" />
+          class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none" />
       </div>
       <div class="sm:col-span-2">
         <label for="cf-desc" class="font-medium text-ink">Nombre del producto</label>
         <input id="cf-desc" bind:value={descripcion} placeholder="MUUU WAFER LECHE PAG 14 LLEVE 15"
-          class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none" />
+          class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none" />
       </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div>
         <label for="cf-lote" class="font-medium text-ink">Lote</label>
         <input id="cf-lote" bind:value={numeroLote} placeholder="2164609"
-          class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none" />
+          class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none" />
       </div>
       <div>
         <label for="cf-venc" class="font-medium text-ink">Fecha de vencimiento</label>
         <input id="cf-venc" type="date" bind:value={fechaVenc}
-          class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none" />
-      </div>
-      <div>
-        <label for="cf-und" class="font-medium text-ink">Unidades</label>
-        <input id="cf-und" type="number" min="0" step="any" bind:value={unidades}
-          class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none" />
+          class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none" />
       </div>
     </div>
+
+    <fieldset class="rounded-card border border-line p-3">
+      <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-muted">
+        Cantidad encontrada
+      </legend>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <label for="cf-cajas" class="font-medium text-ink">Cajas</label>
+          <input id="cf-cajas" type="number" min="0" step="1" bind:value={cajas}
+            class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none" />
+        </div>
+        <div>
+          <label for="cf-upc" class="font-medium text-ink">Unidades por caja</label>
+          <input id="cf-upc" type="number" min="1" step="1" bind:value={unidadesPorCaja}
+            class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none" />
+        </div>
+        <div>
+          <label for="cf-und" class="font-medium text-ink">Unidades sueltas</label>
+          <input id="cf-und" type="number" min="0" step="any" bind:value={unidadesSueltas}
+            class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none" />
+        </div>
+      </div>
+      <p class="mt-2 text-xs text-muted">
+        Total: <span class="font-medium text-ink">{num(totalUnidades)}</span> unidades
+        ({num(nCajas)} cajas x {num(nPorCaja)} + {num(nSueltas)} sueltas). Cada campo se guarda tal
+        como lo escribas.
+      </p>
+    </fieldset>
 
     <div>
       <label for="cf-bod" class="font-medium text-ink">Bodega</label>
       <select id="cf-bod" bind:value={bodegaId}
-        class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none">
+        class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none">
         <option value={null} disabled>Selecciona una bodega</option>
         {#each bodegas as b (b.id)}<option value={b.id}>{b.nombre}</option>{/each}
       </select>
@@ -140,7 +180,7 @@
     <div>
       <label for="cf-obs" class="font-medium text-ink">Observaciones</label>
       <textarea id="cf-obs" rows="2" bind:value={observaciones}
-        class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none"></textarea>
+        class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none"></textarea>
     </div>
   </div>
 

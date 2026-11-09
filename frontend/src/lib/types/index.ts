@@ -81,7 +81,11 @@ export interface RegistroCortaFechaRow {
   producto_sku: string;
   producto_descripcion: string;
   numero_lote: string;
+  /** Total en unidades base. */
   unidades: string | null;
+  cajas: string | null;
+  unidades_sueltas: string | null;
+  unidades_por_caja: string | null;
   fecha_vencimiento: string | null;
   bodega_nombre: string;
   responsable: string;
@@ -121,6 +125,9 @@ export interface ExistenciaBodega {
   bodega_nombre: string;
   sucursal_nombre: string;
   cantidad: string;
+  /** Desglose declarado por el encargado; null si no se declaro. */
+  cajas: string | null;
+  unidades_sueltas: string | null;
 }
 
 export interface InspeccionResumen {

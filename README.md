@@ -66,6 +66,47 @@ psql -d corta_fecha -f backend/db/schema.sql
 
 Para cambios versionados usar Alembic (ver `backend/migrations/`).
 
+Migraciones SQL ya incluidas (aplicar en orden sobre una base existente):
+
+```bash
+psql "$DATABASE_URL" -f backend/migrations/001_inventario_cajas_unidades.sql
+```
+
+- `001_inventario_cajas_unidades.sql`: agrega `inventario_lotes.cajas` y
+  `inventario_lotes.unidades_sueltas` para guardar el desglose que declara el
+  encargado en vez de derivarlo del factor de empaque.
+
+## PWA (instalable y uso sin conexion)
+
+El frontend es una PWA: se instala en movil y escritorio (WebAPK en Android)
+y usa un Service Worker generado con Workbox a traves de `vite-plugin-pwa` y
+`@vite-pwa/sveltekit` (configuracion en `frontend/vite.config.ts`).
+
+Que cachea:
+
+- El shell de la app y los assets del build (precache de Workbox).
+- Las pantallas visitadas: `NetworkFirst`, con la copia local como respaldo.
+- Las lecturas GET de la API: `NetworkFirst` con copia valida 24 h, para
+  consultar los ultimos datos sin conexion. Esa cache se borra al cerrar
+  sesion, para que un usuario no vea datos del anterior en el mismo equipo.
+- Las fuentes de Google: `CacheFirst` por un ano.
+- Sin conexion y sin copia local se muestra `frontend/static/offline.html`.
+
+Probar la PWA (el Service Worker esta desactivado en `npm run dev`):
+
+```bash
+cd frontend
+npm run build
+node build
+```
+
+Luego abrir la app en `http://localhost:3000` e instalarla desde el aviso de
+la propia app o desde el menu del navegador. Fuera de `localhost` el
+navegador solo ofrece la instalacion si el sitio se sirve por HTTPS.
+
+Iconos y manifiesto: `frontend/static/icons/` y la clave `manifest` de
+`frontend/vite.config.ts`.
+
 ## Modulos (MVP)
 
 1. Inicio de sesion y roles basicos

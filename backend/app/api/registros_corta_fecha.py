@@ -14,7 +14,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -29,14 +29,42 @@ router = APIRouter(prefix="/registros-corta-fecha", tags=["registros-corta-fecha
 
 
 class RegistroCortaFechaCreate(BaseModel):
+    """Captura de corta fecha.
+
+    El encargado declara el desglose: `cajas` y `unidades_sueltas` son
+    campos independientes, y `unidades_por_caja` dice cuantas unidades trae
+    una caja. El total en unidades base se calcula como
+    `cajas * unidades_por_caja + unidades_sueltas`.
+
+    `unidades` se sigue aceptando por compatibilidad: si llega sola, se
+    toma como unidades sueltas y no se convierte a cajas.
+    """
+
     sku: str = Field(min_length=1, description="Codigo del producto")
     descripcion: str = Field(min_length=1, description="Nombre del producto")
     numero_lote: str = Field(min_length=1)
     fecha_vencimiento: date
-    unidades: Decimal = Field(gt=0)
+    cajas: Decimal = Field(default=Decimal(0), ge=0)
+    unidades_sueltas: Decimal = Field(default=Decimal(0), ge=0)
+    unidades_por_caja: Decimal = Field(default=Decimal(1), gt=0)
+    unidades: Decimal | None = Field(
+        default=None, ge=0, description="Compatibilidad: total en unidades sueltas"
+    )
     bodega_id: int
     proveedor_id: int | None = None
     observaciones: str | None = None
+
+    @property
+    def total_unidades(self) -> Decimal:
+        return self.cajas * self.unidades_por_caja + self.unidades_sueltas
+
+    @model_validator(mode="after")
+    def _validar_cantidades(self) -> "RegistroCortaFechaCreate":
+        if self.unidades is not None and self.cajas == 0 and self.unidades_sueltas == 0:
+            self.unidades_sueltas = self.unidades
+        if self.total_unidades <= 0:
+            raise ValueError("Indica al menos una caja o una unidad.")
+        return self
 
 
 class RegistroVistaRow(BaseModel):
@@ -45,7 +73,11 @@ class RegistroVistaRow(BaseModel):
     producto_sku: str
     producto_descripcion: str
     numero_lote: str
+    # Total en unidades base (cajas * unidades_por_caja + unidades sueltas).
     unidades: Decimal | None
+    cajas: Decimal | None
+    unidades_sueltas: Decimal | None
+    unidades_por_caja: Decimal | None
     fecha_vencimiento: date | None
     bodega_nombre: str
     responsable: str
@@ -65,12 +97,20 @@ def _vista_row(db: Session, inspeccion_id: int) -> RegistroVistaRow:
             Bodega.nombre,
             Usuario.nombre,
             Inspeccion.fecha_inspeccion,
+            InventarioLote.cajas,
+            InventarioLote.unidades_sueltas,
+            Producto.factor_empaque,
         )
         .join(Lote, Lote.id == Inspeccion.lote_id)
         .join(Producto, Producto.id == Lote.producto_id)
         .outerjoin(Proveedor, Proveedor.id == Producto.proveedor_id)
         .join(Bodega, Bodega.id == Inspeccion.bodega_id)
         .join(Usuario, Usuario.id == Inspeccion.responsable_id)
+        .outerjoin(
+            InventarioLote,
+            (InventarioLote.lote_id == Inspeccion.lote_id)
+            & (InventarioLote.bodega_id == Inspeccion.bodega_id),
+        )
         .where(Inspeccion.id == inspeccion_id)
     ).one()
     return RegistroVistaRow(
@@ -84,6 +124,9 @@ def _vista_row(db: Session, inspeccion_id: int) -> RegistroVistaRow:
         bodega_nombre=r[7],
         responsable=r[8],
         registrado_en=r[9],
+        cajas=r[10],
+        unidades_sueltas=r[11],
+        unidades_por_caja=r[12],
     )
 
 
@@ -119,11 +162,17 @@ def crear(
             sku=sku,
             descripcion=payload.descripcion.strip(),
             proveedor_id=payload.proveedor_id,
+            # Unidades que trae una caja. Antes quedaba en 1 y la vista de
+            # lotes mostraba todo el total como cajas.
+            factor_empaque=payload.unidades_por_caja,
         )
         db.add(producto)
         db.flush()
-    elif payload.proveedor_id is not None and producto.proveedor_id is None:
-        producto.proveedor_id = payload.proveedor_id
+    else:
+        if payload.proveedor_id is not None and producto.proveedor_id is None:
+            producto.proveedor_id = payload.proveedor_id
+        if payload.unidades_por_caja != Decimal(1):
+            producto.factor_empaque = payload.unidades_por_caja
 
     # 2. Lote: buscar por (producto, numero_lote), crear si no existe.
     lote = db.scalar(
@@ -149,23 +198,28 @@ def crear(
             InventarioLote.bodega_id == payload.bodega_id,
         )
     )
+    total = payload.total_unidades
     if inv is None:
         db.add(
             InventarioLote(
                 lote_id=lote.id,
                 bodega_id=payload.bodega_id,
-                cantidad=payload.unidades,
+                cantidad=total,
+                cajas=payload.cajas,
+                unidades_sueltas=payload.unidades_sueltas,
             )
         )
     else:
-        inv.cantidad = payload.unidades
+        inv.cantidad = total
+        inv.cajas = payload.cajas
+        inv.unidades_sueltas = payload.unidades_sueltas
 
     # 4. Inspeccion: la captura fisica confirmada por el responsable.
     insp = Inspeccion(
         lote_id=lote.id,
         bodega_id=payload.bodega_id,
         responsable_id=user.id,
-        cantidad_contada=payload.unidades,
+        cantidad_contada=total,
         fecha_vencimiento_verificada=payload.fecha_vencimiento,
         observaciones=payload.observaciones,
     )

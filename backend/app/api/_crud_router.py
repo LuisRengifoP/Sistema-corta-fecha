@@ -17,6 +17,7 @@ def make_crud_router(
     read_schema: Type[BaseModel],
     create_schema: Type[BaseModel],
     update_schema: Type[BaseModel],
+    en_uso_msg: str = "otros datos dependen de el",
 ) -> APIRouter:
     """Construye un router REST estandar (list/get/create/update/delete)."""
 
@@ -54,7 +55,17 @@ def make_crud_router(
 
     @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
     def eliminar(item_id: int, db: Session = Depends(get_db)):
-        obj = crud.remove(db, item_id)
+        try:
+            obj = crud.remove(db, item_id)
+        except IntegrityError as exc:
+            # El registro esta referenciado por otras filas (FK con RESTRICT).
+            # Sin este manejo la excepcion subia sin cabeceras CORS y el
+            # navegador solo reportaba "Failed to fetch".
+            db.rollback()
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                f"No se puede eliminar: el registro esta en uso ({en_uso_msg}).",
+            ) from exc
         if obj is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "No encontrado")
 

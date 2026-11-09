@@ -73,6 +73,11 @@
             <td class="px-4 py-3 text-ink">{f.producto_descripcion}</td>
             <td class="px-4 py-3 text-right text-ink">
               {f.unidades !== null ? num(f.unidades) : '—'}
+              {#if f.cajas !== null || f.unidades_sueltas !== null}
+                <span class="block text-xs text-muted">
+                  {num(f.cajas ?? 0)} cajas + {num(f.unidades_sueltas ?? 0)} und.
+                </span>
+              {/if}
             </td>
             <td class="px-4 py-3 text-ink">{fechaLocal(f.fecha_vencimiento)}</td>
             <td class="px-4 py-3 text-ink">{f.numero_lote}</td>

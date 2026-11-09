@@ -14,7 +14,13 @@ from app.services.alertas import clasificar, _umbrales_de
 
 
 def _cajas_unidades(total: Decimal, factor: Decimal) -> tuple[int, Decimal]:
-    if factor <= 0:
+    """Deriva el desglose a partir del total y del factor de empaque.
+
+    Solo se usa cuando el encargado no declaro cajas/unidades sueltas. Con
+    factor 1 no hay forma de repartir, asi que el total queda como unidades
+    sueltas (antes se reportaba como 'N cajas + 0 unidades').
+    """
+    if factor <= 1:
         return 0, total
     cajas = int(total // factor)
     unidades = total - cajas * factor
@@ -45,6 +51,9 @@ def listar_vista(
             InventarioLote.lote_id,
             func.sum(InventarioLote.cantidad).label("total"),
             func.count(func.distinct(InventarioLote.bodega_id)).label("n_bodegas"),
+            # Desglose declarado por el encargado (NULL si no se declaro).
+            func.sum(InventarioLote.cajas).label("cajas"),
+            func.sum(InventarioLote.unidades_sueltas).label("sueltas"),
         )
         .join(Bodega, Bodega.id == InventarioLote.bodega_id)
         .group_by(InventarioLote.lote_id)
@@ -52,7 +61,8 @@ def listar_vista(
     if sucursal_id is not None:
         exist_stmt = exist_stmt.where(Bodega.sucursal_id == sucursal_id)
     existencias = {
-        r.lote_id: (r.total or Decimal(0), r.n_bodegas) for r in db.execute(exist_stmt).all()
+        r.lote_id: (r.total or Decimal(0), r.n_bodegas, r.cajas, r.sueltas)
+        for r in db.execute(exist_stmt).all()
     }
 
     # Ultima inspeccion por lote.
@@ -79,7 +89,9 @@ def listar_vista(
 
     filas: list[dict] = []
     for lote, producto, categoria in db.execute(lotes_stmt).all():
-        total, n_bodegas = existencias.get(lote.id, (Decimal(0), 0))
+        total, n_bodegas, cajas_decl, sueltas_decl = existencias.get(
+            lote.id, (Decimal(0), 0, None, None)
+        )
         # Si se filtra por sucursal y el lote no tiene existencia ahi, omitir.
         if sucursal_id is not None and lote.id not in existencias:
             continue
@@ -88,7 +100,12 @@ def listar_vista(
             continue
         if estado and est != estado:
             continue
-        cajas, unidades = _cajas_unidades(total, producto.factor_empaque)
+        # El desglose declarado manda; solo se deriva cuando no existe.
+        if cajas_decl is not None or sueltas_decl is not None:
+            cajas = int(cajas_decl or 0)
+            unidades = sueltas_decl or Decimal(0)
+        else:
+            cajas, unidades = _cajas_unidades(total, producto.factor_empaque)
         filas.append(
             {
                 "id": lote.id,
@@ -135,9 +152,18 @@ def detalle(db: Session, lote_id: int, *, hoy: date | None = None) -> dict | Non
             "bodega_nombre": bnom,
             "sucursal_nombre": snom,
             "cantidad": cant,
+            "cajas": cajas,
+            "unidades_sueltas": sueltas,
         }
-        for bid, bnom, snom, cant in db.execute(
-            select(Bodega.id, Bodega.nombre, Sucursal.nombre, InventarioLote.cantidad)
+        for bid, bnom, snom, cant, cajas, sueltas in db.execute(
+            select(
+                Bodega.id,
+                Bodega.nombre,
+                Sucursal.nombre,
+                InventarioLote.cantidad,
+                InventarioLote.cajas,
+                InventarioLote.unidades_sueltas,
+            )
             .join(Bodega, Bodega.id == InventarioLote.bodega_id)
             .join(Sucursal, Sucursal.id == Bodega.sucursal_id)
             .where(InventarioLote.lote_id == lote_id)

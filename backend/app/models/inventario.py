@@ -52,7 +52,13 @@ class InventarioLote(Base):
     bodega_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("bodegas.id", ondelete="RESTRICT"), nullable=False
     )
+    # Total en unidades base. Es la cifra con la que trabajan alertas y reportes.
     cantidad: Mapped[Decimal] = mapped_column(Numeric(14, 3), default=0, nullable=False)
+    # Desglose declarado por el encargado. Ambos campos son independientes:
+    # el sistema no reparte el total entre cajas y unidades por su cuenta.
+    # NULL = no se declaro desglose (se deriva con factor_empaque).
+    cajas: Mapped[Decimal | None] = mapped_column(Numeric(14, 3))
+    unidades_sueltas: Mapped[Decimal | None] = mapped_column(Numeric(14, 3))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

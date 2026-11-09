@@ -49,6 +49,14 @@ def actualizar(item_id: int, payload: UsuarioUpdate, db: Session = Depends(get_d
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar(item_id: int, db: Session = Depends(get_db)):
-    obj = crud.remove(db, item_id)
+    try:
+        obj = crud.remove(db, item_id)
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "No se puede eliminar: el usuario tiene inspecciones o novedades registradas. "
+            "Desactivalo en lugar de eliminarlo.",
+        ) from exc
     if obj is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No encontrado")

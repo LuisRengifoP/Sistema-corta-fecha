@@ -227,7 +227,12 @@ CREATE TABLE inventario_lotes (
     id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     lote_id    BIGINT NOT NULL REFERENCES lotes(id) ON DELETE RESTRICT,
     bodega_id  BIGINT NOT NULL REFERENCES bodegas(id) ON DELETE RESTRICT,
+    -- Total en unidades base; es la cifra que usan alertas y reportes.
     cantidad   NUMERIC(14,3) NOT NULL DEFAULT 0 CHECK (cantidad >= 0),
+    -- Desglose declarado por el encargado (campos independientes, editables).
+    -- NULL = no se declaro desglose y se deriva con productos.factor_empaque.
+    cajas            NUMERIC(14,3) CHECK (cajas IS NULL OR cajas >= 0),
+    unidades_sueltas NUMERIC(14,3) CHECK (unidades_sueltas IS NULL OR unidades_sueltas >= 0),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (lote_id, bodega_id)
 );

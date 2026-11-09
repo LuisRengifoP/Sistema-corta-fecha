@@ -17,6 +17,10 @@
   let usuario = $state<Usuario | null>(null);
   let sucursales = $state<Sucursal[]>([]);
   let sucursalSel = $state<string>('todas');
+
+  // Con una sola sucursal habilitada el filtro no aporta nada: se muestra
+  // el nombre fijo en lugar del selector.
+  const sucursalUnica = $derived(sucursales.length === 1 ? sucursales[0] : null);
   let menuAbierto = $state(false);
 
   const TITULOS: Record<string, string> = {
@@ -71,19 +75,23 @@
     />
   </div>
 
-  <!-- Selector de bodega -->
+  <!-- Sucursal -->
   <div class="flex items-center gap-2 rounded-control border border-line px-2.5 py-1.5">
     <Warehouse size={16} class="text-muted" />
-    <select
-      bind:value={sucursalSel}
-      class="bg-transparent text-sm text-ink focus:outline-none"
-      aria-label="Seleccionar bodega"
-    >
-      <option value="todas">Todas las bodegas</option>
-      {#each sucursales as s (s.id)}
-        <option value={String(s.id)}>{s.nombre}</option>
-      {/each}
-    </select>
+    {#if sucursalUnica}
+      <span class="text-sm text-ink">{sucursalUnica.nombre}</span>
+    {:else}
+      <select
+        bind:value={sucursalSel}
+        class="bg-transparent text-sm text-ink focus:outline-none"
+        aria-label="Seleccionar sucursal"
+      >
+        <option value="todas">Todas las sucursales</option>
+        {#each sucursales as s (s.id)}
+          <option value={String(s.id)}>{s.nombre}</option>
+        {/each}
+      </select>
+    {/if}
   </div>
 
   <!-- Modo oscuro -->

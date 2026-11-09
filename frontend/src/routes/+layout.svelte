@@ -7,6 +7,7 @@
   import AppSidebar from '$lib/components/layout/AppSidebar.svelte';
   import AppHeader from '$lib/components/layout/AppHeader.svelte';
   import Toaster from '$lib/components/shared/Toaster.svelte';
+  import PwaManager from '$lib/components/pwa/PwaManager.svelte';
 
   let { children } = $props();
 
@@ -36,3 +37,4 @@
 {/if}
 
 <Toaster />
+<PwaManager />

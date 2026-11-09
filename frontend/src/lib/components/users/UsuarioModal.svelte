@@ -3,6 +3,8 @@
   import { toast } from '$lib/stores/ui';
   import type { Rol, Sucursal, Usuario } from '$lib/types';
   import XIcon from 'lucide-svelte/icons/x';
+  import EyeIcon from 'lucide-svelte/icons/eye';
+  import EyeOffIcon from 'lucide-svelte/icons/eye-off';
 
   let {
     usuario = null,
@@ -12,6 +14,7 @@
     onSaved
   }: {
     usuario?: Usuario | null;
+    /** Solo los roles que el sistema usa hoy (ver filtro en la pagina de usuarios). */
     roles: Rol[];
     sucursales: Sucursal[];
     onClose: () => void;
@@ -20,13 +23,24 @@
 
   const edicion = usuario !== null;
 
+  // Con una sola sucursal habilitada no hay nada que elegir: se asigna sola.
+  const sucursalUnica = $derived(sucursales.length === 1 ? sucursales[0] : null);
+
   let nombre = $state(usuario?.nombre ?? '');
   let email = $state(usuario?.email ?? '');
   let password = $state('');
+  let verPassword = $state(false);
   let rolId = $state<number | null>(usuario?.rol_id ?? roles[0]?.id ?? null);
-  let sucursalId = $state<number | null>(usuario?.sucursal_id ?? null);
+  let sucursalId = $state<number | null>(
+    usuario?.sucursal_id ?? (sucursales.length === 1 ? sucursales[0].id : null)
+  );
   let activo = $state(usuario?.activo ?? true);
   let guardando = $state(false);
+
+  // Si solo hay una sucursal, el usuario queda siempre asignado a ella.
+  $effect(() => {
+    if (sucursalUnica !== null) sucursalId = sucursalUnica.id;
+  });
 
   const puedeGuardar = $derived(
     nombre.trim() !== '' &&
@@ -88,13 +102,13 @@
     <div>
       <label for="nombre" class="font-medium text-ink">Nombre</label>
       <input id="nombre" bind:value={nombre}
-        class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none" />
+        class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none" />
     </div>
 
     <div>
       <label for="email" class="font-medium text-ink">Email</label>
       <input id="email" type="email" bind:value={email} disabled={edicion}
-        class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none disabled:bg-canvas disabled:text-muted" />
+        class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none disabled:bg-canvas disabled:text-muted" />
       {#if edicion}
         <p class="mt-1 text-xs text-muted">El email no se puede cambiar.</p>
       {/if}
@@ -104,26 +118,51 @@
       <label for="password" class="font-medium text-ink">
         {edicion ? 'Nueva contrasena (opcional)' : 'Contrasena'}
       </label>
-      <input id="password" type="password" bind:value={password}
-        placeholder={edicion ? 'Dejar vacio para mantener' : 'Minimo 6 caracteres'}
-        class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none" />
+      <div class="relative mt-1">
+        <input
+          id="password"
+          type={verPassword ? 'text' : 'password'}
+          bind:value={password}
+          autocomplete="new-password"
+          placeholder={edicion ? 'Dejar vacio para mantener' : 'Minimo 6 caracteres'}
+          class="w-full rounded-control border border-line bg-surface px-3 py-2 pr-10 text-ink focus:border-brand focus:outline-none"
+        />
+        <button
+          type="button"
+          onclick={() => (verPassword = !verPassword)}
+          class="absolute inset-y-0 right-0 flex items-center px-3 text-muted hover:text-ink"
+          aria-label={verPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+          title={verPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+        >
+          {#if verPassword}<EyeOffIcon size={16} />{:else}<EyeIcon size={16} />{/if}
+        </button>
+      </div>
     </div>
 
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label for="rol" class="font-medium text-ink">Rol</label>
         <select id="rol" bind:value={rolId}
-          class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none">
+          class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none">
           {#each roles as r (r.id)}<option value={r.id}>{r.nombre}</option>{/each}
         </select>
       </div>
       <div>
-        <label for="sucursal" class="font-medium text-ink">Sucursal</label>
-        <select id="sucursal" bind:value={sucursalId}
-          class="mt-1 w-full rounded-control border border-line px-3 py-2 focus:border-brand focus:outline-none">
-          <option value={null}>Sin asignar</option>
-          {#each sucursales as s (s.id)}<option value={s.id}>{s.nombre}</option>{/each}
-        </select>
+        <span class="font-medium text-ink">Sucursal</span>
+        {#if sucursalUnica}
+          <p
+            class="mt-1 w-full rounded-control border border-line bg-canvas px-3 py-2 text-ink"
+            title="Unica sucursal habilitada"
+          >
+            {sucursalUnica.nombre}
+          </p>
+        {:else}
+          <select bind:value={sucursalId} aria-label="Sucursal"
+            class="mt-1 w-full rounded-control border border-line bg-surface px-3 py-2 text-ink focus:border-brand focus:outline-none">
+            <option value={null}>Sin asignar</option>
+            {#each sucursales as s (s.id)}<option value={s.id}>{s.nombre}</option>{/each}
+          </select>
+        {/if}
       </div>
     </div>
 

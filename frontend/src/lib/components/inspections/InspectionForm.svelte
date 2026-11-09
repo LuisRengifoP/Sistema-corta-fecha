@@ -44,6 +44,16 @@
   let guardando = $state(false);
 
   const factor = $derived(detalle ? Number(detalle.factor_empaque) : 1);
+
+  /** Parte del desglose que ya declaro el encargado para esa bodega. */
+  function prefijarDesglose() {
+    const e = detalle?.existencias.find((x) => x.bodega_id === bodegaId);
+    if (!e) return;
+    if (e.cajas !== null || e.unidades_sueltas !== null) {
+      cajas = Number(e.cajas ?? 0);
+      unidades = Number(e.unidades_sueltas ?? 0);
+    }
+  }
   const cantidadContada = $derived(cajas * factor + Number(unidades));
   const existenciaBodega = $derived(
     detalle && bodegaId
@@ -80,6 +90,7 @@
       detalle = await api.get<LoteDetalle>(`/api/v1/lotes/${row.id}/detalle`);
       fechaVenc = detalle.fecha_vencimiento ?? '';
       if (detalle.existencias.length === 1) bodegaId = detalle.existencias[0].bodega_id;
+      prefijarDesglose();
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Error', 'error');
     }
@@ -200,9 +211,22 @@
               <div class="mt-1 space-y-2">
                 {#each detalle.existencias as e (e.bodega_id)}
                   <label class="flex cursor-pointer items-center gap-2 rounded-control border border-line px-3 py-2 text-sm">
-                    <input type="radio" name="bodega" value={e.bodega_id} bind:group={bodegaId} />
+                    <input
+                      type="radio"
+                      name="bodega"
+                      value={e.bodega_id}
+                      bind:group={bodegaId}
+                      onchange={prefijarDesglose}
+                    />
                     <span class="text-ink">{e.sucursal_nombre} · {e.bodega_nombre}</span>
-                    <span class="ml-auto text-muted">{num(e.cantidad)}</span>
+                    <span class="ml-auto text-muted">
+                      {num(e.cantidad)}
+                      {#if e.cajas !== null || e.unidades_sueltas !== null}
+                        <span class="text-xs">
+                          ({num(e.cajas ?? 0)} cajas + {num(e.unidades_sueltas ?? 0)} und.)
+                        </span>
+                      {/if}
+                    </span>
                   </label>
                 {/each}
               </div>
