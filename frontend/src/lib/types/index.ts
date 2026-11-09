@@ -21,6 +21,28 @@ export interface Usuario {
   ultimo_acceso: string | null;
 }
 
+export interface Rol {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+}
+
+export interface Sucursal {
+  id: number;
+  codigo: string;
+  nombre: string;
+  direccion: string | null;
+  activa: boolean;
+}
+
+export interface Bodega {
+  id: number;
+  sucursal_id: number;
+  codigo: string;
+  nombre: string;
+  activa: boolean;
+}
+
 export interface ResumenDashboard {
   alertas_por_estado: Record<EstadoAlerta, number>;
   alertas_por_seguimiento: Record<EstadoSeguimiento, number>;

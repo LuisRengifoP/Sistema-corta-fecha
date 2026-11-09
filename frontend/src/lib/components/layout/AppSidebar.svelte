@@ -51,8 +51,8 @@
     {
       titulo: 'Administracion',
       items: [
-        { label: 'Usuarios y permisos', href: '/usuarios', icon: Users, disponible: false },
-        { label: 'Configuracion', href: '/configuracion', icon: Settings, disponible: false }
+        { label: 'Usuarios y permisos', href: '/usuarios', icon: Users, disponible: true },
+        { label: 'Configuracion', href: '/configuracion', icon: Settings, disponible: true }
       ]
     }
   ];
