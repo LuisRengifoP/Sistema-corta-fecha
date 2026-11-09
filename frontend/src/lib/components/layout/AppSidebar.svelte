@@ -13,9 +13,9 @@
   import Settings from 'lucide-svelte/icons/settings';
   import PanelLeftClose from 'lucide-svelte/icons/panel-left-close';
   import PanelLeftOpen from 'lucide-svelte/icons/panel-left-open';
-  import type { Component } from 'svelte';
+  import type { ComponentType } from 'svelte';
 
-  type Item = { label: string; href: string; icon: Component; disponible: boolean };
+  type Item = { label: string; href: string; icon: ComponentType; disponible: boolean };
   type Grupo = { titulo: string; items: Item[] };
 
   const grupos: Grupo[] = [
@@ -33,6 +33,7 @@
     {
       titulo: 'Operacion',
       items: [
+        { label: 'Corta fecha', href: '/corta-fecha', icon: CalendarClock, disponible: true },
         { label: 'Inspecciones', href: '/inspecciones', icon: ClipboardCheck, disponible: true },
         { label: 'Productos averiados', href: '/averiados', icon: PackageX, disponible: true }
       ]
@@ -45,7 +46,7 @@
       titulo: 'Informacion',
       items: [
         { label: 'Reportes', href: '/reportes', icon: FileText, disponible: true },
-        { label: 'Historial', href: '/historial', icon: History, disponible: false }
+        { label: 'Historial', href: '/historial', icon: History, disponible: true }
       ]
     },
     {

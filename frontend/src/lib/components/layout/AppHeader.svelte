@@ -3,11 +3,14 @@
   import { goto } from '$app/navigation';
   import { api } from '$lib/services/api';
   import { logout } from '$lib/stores/auth';
+  import { tema, alternarTema } from '$lib/stores/theme';
   import type { Usuario } from '$lib/types';
   import Search from 'lucide-svelte/icons/search';
   import LogOut from 'lucide-svelte/icons/log-out';
   import ChevronDown from 'lucide-svelte/icons/chevron-down';
   import Warehouse from 'lucide-svelte/icons/warehouse';
+  import Sun from 'lucide-svelte/icons/sun';
+  import Moon from 'lucide-svelte/icons/moon';
 
   type Sucursal = { id: number; nombre: string };
 
@@ -22,7 +25,10 @@
     '/inspecciones': 'Inspecciones',
     '/alertas': 'Alertas y seguimiento',
     '/averiados': 'Productos averiados',
-    '/reportes': 'Reportes'
+    '/reportes': 'Reportes',
+    '/historial': 'Historial de cambios',
+    '/usuarios': 'Usuarios y permisos',
+    '/configuracion': 'Configuracion'
   };
   let titulo = $derived(TITULOS[$page.url.pathname] ?? 'Corta Fecha');
 
@@ -79,6 +85,20 @@
       {/each}
     </select>
   </div>
+
+  <!-- Modo oscuro -->
+  <button
+    onclick={alternarTema}
+    class="flex h-9 w-9 items-center justify-center rounded-control border border-line text-muted hover:bg-canvas hover:text-ink"
+    aria-label="Cambiar tema"
+    title={$tema === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+  >
+    {#if $tema === 'dark'}
+      <Sun size={17} />
+    {:else}
+      <Moon size={17} />
+    {/if}
+  </button>
 
   <!-- Usuario -->
   <div class="relative">

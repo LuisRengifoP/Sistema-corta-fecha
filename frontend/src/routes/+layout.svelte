@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { token } from '$lib/stores/auth';
+  import '$lib/stores/theme'; // aplica el tema (claro/oscuro) al cargar
   import AppSidebar from '$lib/components/layout/AppSidebar.svelte';
   import AppHeader from '$lib/components/layout/AppHeader.svelte';
   import Toaster from '$lib/components/shared/Toaster.svelte';

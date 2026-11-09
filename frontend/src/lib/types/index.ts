@@ -27,6 +27,28 @@ export interface Rol {
   descripcion: string | null;
 }
 
+export type AccionAuditoria = 'insert' | 'update' | 'delete';
+
+export interface HistorialCambio {
+  id: number;
+  tabla: string;
+  registro_id: number;
+  accion: AccionAuditoria;
+  usuario_id: number | null;
+  usuario_nombre: string | null;
+  datos_antes: Record<string, unknown> | null;
+  datos_despues: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/** Respuesta paginada en servidor. */
+export interface Pagina<T> {
+  items: T[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
 export interface Sucursal {
   id: number;
   codigo: string;
@@ -41,6 +63,29 @@ export interface Bodega {
   codigo: string;
   nombre: string;
   activa: boolean;
+}
+
+export interface Proveedor {
+  id: number;
+  nombre: string;
+  nit: string | null;
+  contacto: string | null;
+  telefono: string | null;
+  email: string | null;
+  activo: boolean;
+}
+
+export interface RegistroCortaFechaRow {
+  id: number;
+  proveedor: string | null;
+  producto_sku: string;
+  producto_descripcion: string;
+  numero_lote: string;
+  unidades: string | null;
+  fecha_vencimiento: string | null;
+  bodega_nombre: string;
+  responsable: string;
+  registrado_en: string;
 }
 
 export interface ResumenDashboard {

@@ -3,6 +3,38 @@
 @tailwind utilities;
 
 @layer base {
+  /* Tema claro (por defecto). Tripletes RGB para usar con opacidad. */
+  :root {
+    --color-navy: 23 43 77;
+    --color-brand: 37 99 235;
+    --color-brand-700: 29 78 216;
+    --color-canvas: 244 246 249;
+    --color-surface: 255 255 255;
+    --color-ink: 38 52 69;
+    --color-muted: 100 116 139;
+    --color-line: 226 232 240;
+    --color-estado-normal: 22 163 74;
+    --color-estado-preventiva: 234 179 8;
+    --color-estado-prioritaria: 249 115 22;
+    --color-estado-critica: 220 38 38;
+  }
+
+  /* Tema oscuro. */
+  .dark {
+    --color-navy: 2 8 23;
+    --color-brand: 59 130 246;
+    --color-brand-700: 37 99 235;
+    --color-canvas: 15 23 42;
+    --color-surface: 30 41 59;
+    --color-ink: 226 232 240;
+    --color-muted: 148 163 184;
+    --color-line: 51 65 85;
+    --color-estado-normal: 34 197 94;
+    --color-estado-preventiva: 234 179 8;
+    --color-estado-prioritaria: 249 115 22;
+    --color-estado-critica: 248 113 113;
+  }
+
   html {
     font-family: 'Inter', system-ui, sans-serif;
   }

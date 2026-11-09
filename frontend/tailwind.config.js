@@ -1,25 +1,33 @@
 /** @type {import('tailwindcss').Config} */
+
+// Tokens de color definidos como variables CSS (triplete RGB) en app.css,
+// para soportar modo oscuro via clase .dark y opacidad (bg-x/10).
+function tok(nombre) {
+  return `rgb(var(--color-${nombre}) / <alpha-value>)`;
+}
+
 export default {
+  darkMode: 'class',
   content: ['./src/**/*.{html,js,svelte,ts}'],
   theme: {
     extend: {
       colors: {
-        navy: '#172B4D',
+        navy: tok('navy'),
         brand: {
-          DEFAULT: '#2563EB',
-          600: '#2563EB',
-          700: '#1D4ED8'
+          DEFAULT: tok('brand'),
+          600: tok('brand'),
+          700: tok('brand-700')
         },
-        canvas: '#F4F6F9',
-        surface: '#FFFFFF',
-        ink: '#263445',
-        muted: '#64748B',
-        line: '#E2E8F0',
+        canvas: tok('canvas'),
+        surface: tok('surface'),
+        ink: tok('ink'),
+        muted: tok('muted'),
+        line: tok('line'),
         estado: {
-          normal: '#16A34A',
-          preventiva: '#EAB308',
-          prioritaria: '#F97316',
-          critica: '#DC2626'
+          normal: tok('estado-normal'),
+          preventiva: tok('estado-preventiva'),
+          prioritaria: tok('estado-prioritaria'),
+          critica: tok('estado-critica')
         }
       },
       fontFamily: {

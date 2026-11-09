@@ -5,9 +5,11 @@ from fastapi import APIRouter, Depends
 from app.api import (
     alertas,
     dashboard,
+    historial,
     inspecciones_vista,
     lotes_vista,
     novedades_vista,
+    registros_corta_fecha,
     reportes,
     usuarios,
 )
@@ -91,6 +93,8 @@ api_router.include_router(
         update_schema=inventario.InventarioLoteUpdate,
     )
 )
+# Registro de corta fecha: captura en un paso (producto + lote + inspeccion).
+api_router.include_router(registros_corta_fecha.router)
 api_router.include_router(inspecciones_vista.router)
 api_router.include_router(
     make_crud_router(
@@ -136,3 +140,6 @@ api_router.include_router(dashboard.router)
 
 # Reportes y exportacion Excel.
 api_router.include_router(reportes.router)
+
+# Historial de cambios (auditoria) con paginacion en servidor.
+api_router.include_router(historial.router)
