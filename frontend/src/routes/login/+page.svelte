@@ -1,7 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { login } from '$lib/services/api';
-  import ShieldCheck from 'lucide-svelte/icons/shield-check';
   import EyeIcon from 'lucide-svelte/icons/eye';
   import EyeOffIcon from 'lucide-svelte/icons/eye-off';
 
@@ -32,9 +31,13 @@
     class="w-full max-w-sm space-y-5 rounded-card border border-line bg-surface p-8 shadow-card"
   >
     <div class="text-center">
-      <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-card bg-navy text-white">
-        <ShieldCheck size={22} />
-      </div>
+      <img
+        src="/logo.png"
+        alt="Corta Fecha"
+        width="96"
+        height="96"
+        class="mx-auto mb-3 h-24 w-24 rounded-card"
+      />
       <h1 class="text-xl font-bold text-ink">Sistema Corta Fecha</h1>
       <p class="text-sm text-muted">Inicia sesion para continuar</p>
     </div>

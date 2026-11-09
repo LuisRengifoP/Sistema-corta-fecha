@@ -72,9 +72,13 @@
     : 'w-[248px]'}"
 >
   <div class="flex h-16 items-center gap-2 px-4">
-    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-brand text-sm font-bold">
-      CF
-    </div>
+    <img
+      src="/icons/marca-192.png"
+      alt="Corta Fecha"
+      width="32"
+      height="32"
+      class="h-8 w-8 shrink-0 rounded-control"
+    />
     {#if !colapsado}
       <div class="min-w-0">
         <p class="truncate text-sm font-semibold">Corta Fecha</p>

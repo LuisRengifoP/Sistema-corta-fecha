@@ -19,39 +19,12 @@ export default defineConfig(({ mode }) => {
         // recargar una pantalla a medio llenar durante el recorrido de pasillos.
         registerType: 'prompt',
         injectRegister: null,
-        manifest: {
-          id: '/',
-          name: 'Sistema Corta Fecha',
-          short_name: 'Corta Fecha',
-          description:
-            'Control de productos proximos a vencer y averiados: registro, inspecciones y alertas.',
-          lang: 'es',
-          dir: 'ltr',
-          start_url: '/',
-          scope: '/',
-          display: 'standalone',
-          orientation: 'portrait-primary',
-          background_color: '#f8fafc',
-          theme_color: '#2563eb',
-          categories: ['business', 'productivity'],
-          icons: [
-            { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-            {
-              src: '/icons/maskable-512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable'
-            }
-          ],
-          shortcuts: [
-            { name: 'Corta fecha', short_name: 'Corta fecha', url: '/corta-fecha' },
-            { name: 'Inspecciones', short_name: 'Inspecciones', url: '/inspecciones' },
-            { name: 'Alertas', short_name: 'Alertas', url: '/alertas' }
-          ]
-        },
+        // El manifiesto vive en static/manifest.webmanifest para que el
+        // servidor de desarrollo tambien lo sirva (con el Service Worker
+        // desactivado el plugin no lo generaba y daba 404 en dev).
+        manifest: false,
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2,webmanifest}'],
           // Sin conexion y sin la pagina en cache se muestra /offline.html.
           navigateFallback: '/offline.html',
           navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
