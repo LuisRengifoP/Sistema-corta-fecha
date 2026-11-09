@@ -35,10 +35,33 @@
     --color-estado-critica: 248 113 113;
   }
 
+  /* Hace que los controles nativos (popup de <select>, date picker,
+     scrollbars) sigan el tema. Sin esto, el popup del select se dibuja
+     claro y el texto heredado (text-ink) queda ilegible en modo oscuro. */
+  :root {
+    color-scheme: light;
+  }
+  :root.dark {
+    color-scheme: dark;
+  }
+
   html {
     font-family: 'Inter', system-ui, sans-serif;
   }
   body {
     @apply bg-canvas text-ink antialiased;
+  }
+
+  /* Controles de formulario: fondo y texto explicitos por token de tema,
+     para que las opciones del select sean legibles en claro y oscuro. */
+  select,
+  input,
+  textarea {
+    background-color: rgb(var(--color-surface));
+    color: rgb(var(--color-ink));
+  }
+  option {
+    background-color: rgb(var(--color-surface));
+    color: rgb(var(--color-ink));
   }
 }
