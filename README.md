@@ -31,7 +31,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- API:     http://localhost:8000  (docs: http://localhost:8000/docs)
+- API:     http://localhost:8000 - (docs: http://localhost:8000/docs)
 - Frontend: http://localhost:5173
 - Postgres: localhost:5432
 
